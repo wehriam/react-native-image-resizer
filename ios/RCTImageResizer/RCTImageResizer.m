@@ -40,7 +40,7 @@ NSString * generateFilePath(NSString * ext, NSString * outputPath)
     return fullPath;
 }
 
-RCT_EXPORT_METHOD(createResizedImage:(NSString *)path
+RCT_EXPORT_METHOD(createResizedImage:(NSString *)imageURL
                   width:(float)width
                   height:(float)height
                   quality:(float)quality
@@ -50,18 +50,12 @@ RCT_EXPORT_METHOD(createResizedImage:(NSString *)path
     CGSize newSize = CGSizeMake(width, height);
     NSString* fullPath = generateFilePath(@"jpg", outputPath);
 
-    [_bridge.imageLoader loadImageWithTag:path callback:^(NSError *error, UIImage *image) {
+    NSURLRequest *imageURLRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:imageURL]];
+
+    [_bridge.imageLoader loadImageWithURLRequest:imageURLRequest callback:^(NSError *error, UIImage *image) {
         if (error || image == nil) {
-            if ([path hasPrefix:@"data:"] || [path hasPrefix:@"file:"]) {
-                NSURL *imageUrl = [[NSURL alloc] initWithString:path];
-                image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageUrl]];
-            } else {
-                image = [[UIImage alloc] initWithContentsOfFile:path];
-            }
-            if (image == nil) {
-                callback(@[@"Can't retrieve the file from the path.", @""]);
-                return;
-            }
+            callback(@[@"Can't retrieve the file from the path.", @""]);
+            return;
         }
 
         // Do the resizing
